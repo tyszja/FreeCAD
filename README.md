@@ -1,5 +1,6 @@
-FreeCAD
+FreeCAD - customized fork
 -------
+This `master` branch is a mix of various fixes and improvements from other custom branches. There is no intent of making any pull requests from this branch.
 
 ![screenshot](http://www.freecadweb.org/wiki/images/thumb/7/72/Freecad016_screenshot1.jpg/800px-Freecad016_screenshot1.jpg)
 
