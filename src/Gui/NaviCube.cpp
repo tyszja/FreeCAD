@@ -372,9 +372,14 @@ GLuint NaviCubeImplementation::createCubeFaceTex(QtGLWidget* gl, float gap, floa
 	if (text) {
 		paint.setPen(Qt::white);
 		QFont sansFont(str("Helvetica"), 0.18 * texSize);
-		sansFont.setStretch(QFont::ExtraCondensed);
+
+        if (QFontMetrics(sansFont).width(qApp->translate("Gui::NaviCube", text).toUpper()) > 0.75 * texSize) {
+            float factor = 0.75 * float(texSize) / QFontMetrics(sansFont).width(qApp->translate("Gui::NaviCube", text).toUpper());
+            sansFont.setPointSize(factor * sansFont.pointSizeF());
+        }
+
 		paint.setFont(sansFont);
-		paint.drawText(QRect(0, 0, texSize, texSize), Qt::AlignCenter,qApp->translate("Gui::NaviCube",text));
+		paint.drawText(QRect(0, 0, texSize, texSize), Qt::AlignCenter, qApp->translate("Gui::NaviCube", text).toUpper());
 	}
 	else {
 		QPainterPath path;
@@ -677,12 +682,12 @@ void NaviCubeImplementation::initNaviCube(QtGLWidget* gl) {
 
     if (labels.size() != 6) {
         labels.clear();
-        labels.push_back("FRONT");
-        labels.push_back("REAR");
-        labels.push_back("TOP");
-        labels.push_back("BOTTOM");
-        labels.push_back("RIGHT");
-        labels.push_back("LEFT");
+        labels.push_back("Front");
+        labels.push_back("Rear");
+        labels.push_back("Top");
+        labels.push_back("Bottom");
+        labels.push_back("Right");
+        labels.push_back("Left");
     }
 
 	float gap = 0.12f;
