@@ -885,6 +885,24 @@ void View3DInventorViewer::setNaviCubeCorner(int c)
         naviCube->setCorner(static_cast<NaviCube::Corner>(c));
 }
 
+void View3DInventorViewer::setNaviCubeLocked(bool on)
+{
+    if (naviCube)
+        naviCube->setLocked(on);
+}
+
+void View3DInventorViewer::setNaviCubeOpacity(float f)
+{
+    if (naviCube)
+        naviCube->setOpacity(f);
+}
+
+void View3DInventorViewer::setNaviCubeScale(float f)
+{
+    if (naviCube)
+        naviCube->setScale(f);
+}
+
 NaviCube* View3DInventorViewer::getNavigationCube() const
 {
     return naviCube;

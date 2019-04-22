@@ -126,6 +126,8 @@ using namespace Eigen;
 using namespace std;
 using namespace Gui;
 
+#define CUBE_WIDGET_BASE_SIZE 150
+
 // TODO
 // ortho / persp
 // stay in window
@@ -194,6 +196,7 @@ private:
 
 	void initNaviCube(QtGLWidget*);
 	void addFace(const Vector3f&, const Vector3f&, int, int, int, int,bool flag=false);
+	void clearFaces(void);
 
 	GLuint createCubeFaceTex(QtGLWidget*, float, float, const char*);
 	GLuint createButtonTex(QtGLWidget*, int);
@@ -240,11 +243,13 @@ public:
 	void drawNaviCube(bool picking);
 
 	int m_OverSample = 4;
+	float m_CubeWidgetScale = 1.0;
 	int m_CubeWidgetSize = 0;
 	int m_CubeWidgetPosX = 0;
 	int m_CubeWidgetPosY = 0;
 	int m_PrevWidth = 0;
 	int m_PrevHeight = 0;
+	float m_CubeOpacity = 0.5;
 	QColor m_HiliteColor;
 	QColor m_ButtonColor;
 	QColor m_FrontFaceColor;
@@ -253,6 +258,7 @@ public:
 	bool m_MouseDown = false;
 	bool m_Dragging = false;
 	bool m_MightDrag = false;
+	bool m_DragLocked = false;
     NaviCube::Corner m_Corner = NaviCube::TopRightCorner;
 
 	QtGLFramebufferObject* m_PickingFramebuffer;
@@ -304,15 +310,24 @@ void NaviCube::setCorner(Corner c) {
 	m_NaviCubeImplementation->m_PrevHeight = 0;
 }
 
+void NaviCube::setLocked(bool on) {
+	m_NaviCubeImplementation->m_DragLocked = on;
+}
+
+void NaviCube::setOpacity(float d) {
+	m_NaviCubeImplementation->m_CubeOpacity = d;
+	m_NaviCubeImplementation->m_NaviCubeInitialised = false;
+}
+
+void NaviCube::setScale(float d) {
+	m_NaviCubeImplementation->m_CubeWidgetScale = d;
+	m_NaviCubeImplementation->m_NaviCubeInitialised = false;
+}
+
 NaviCubeImplementation::NaviCubeImplementation(
 		Gui::View3DInventorViewer* viewer) {
 	m_View3DInventorViewer = viewer;
-	m_FrontFaceColor = QColor(255,255,255,128);
-	m_BackFaceColor = QColor(226,233,239,128);
-	m_HiliteColor = QColor(170,226,247);
-	m_ButtonColor = QColor(226,233,239,128);
 	m_PickingFramebuffer = NULL;
-	m_CubeWidgetSize = 132;
 
 	m_Menu = createNaviCubeMenu();
 }
@@ -361,7 +376,7 @@ char* NaviCubeImplementation::enum2str(int e) {
 }
 
 GLuint NaviCubeImplementation::createCubeFaceTex(QtGLWidget* gl, float gap, float radius, const char* text) {
-	int texSize = m_CubeWidgetSize * m_OverSample;
+	int texSize = m_CubeWidgetScale * m_CubeWidgetSize * m_OverSample;
 	int gapi = texSize * gap;
 	int radiusi = texSize * radius;
 	QImage image(texSize, texSize, QImage::Format_ARGB32);
@@ -402,7 +417,7 @@ GLuint NaviCubeImplementation::createCubeFaceTex(QtGLWidget* gl, float gap, floa
 
 
 GLuint NaviCubeImplementation::createButtonTex(QtGLWidget* gl, int button) {
-	int texSize = m_CubeWidgetSize * m_OverSample;
+	int texSize = m_CubeWidgetScale * m_CubeWidgetSize * m_OverSample;
 	QImage image(texSize, texSize, QImage::Format_ARGB32);
 	image.fill(qRgba(255, 255, 255, 0));
 	QPainter painter;
@@ -505,7 +520,7 @@ GLuint NaviCubeImplementation::createButtonTex(QtGLWidget* gl, int button) {
 }
 
 GLuint NaviCubeImplementation::createMenuTex(QtGLWidget* gl, bool forPicking) {
-	int texSize = m_CubeWidgetSize * m_OverSample;
+	int texSize = m_CubeWidgetScale * m_CubeWidgetSize * m_OverSample;
 	QImage image(texSize, texSize, QImage::Format_ARGB32);
 	image.fill(qRgba(0, 0, 0, 0));
 	QPainter painter;
@@ -579,7 +594,25 @@ GLuint NaviCubeImplementation::createMenuTex(QtGLWidget* gl, bool forPicking) {
 #endif
 }
 
+void NaviCubeImplementation::clearFaces(void) {
+	if (!m_VertexArray.empty()) {
+		m_VertexArray.clear();
+	}
 
+	if (!m_Faces.empty()) {
+		for (auto it: m_Faces)
+			delete it;
+		m_Faces.clear();
+	}
+
+	if (!m_IndexArray.empty()) {
+		m_IndexArray.clear();
+	}
+
+	if (!m_TextureCoordArray.empty()) {
+		m_TextureCoordArray.clear();
+	}
+}
 
 void NaviCubeImplementation::addFace(const Vector3f& x, const Vector3f& z, int frontTex, int backTex, int pickTex, int pickId,bool text) {
 	Vector3f y = x.cross(-z);
@@ -644,6 +677,12 @@ void NaviCubeImplementation::addFace(const Vector3f& x, const Vector3f& z, int f
 }
 
 void NaviCubeImplementation::initNaviCube(QtGLWidget* gl) {
+	m_FrontFaceColor = QColor(255,255,255, m_CubeOpacity * 255);
+	m_BackFaceColor = QColor(226,233,239, m_CubeOpacity * 255);
+	m_HiliteColor = QColor(170,226,247);
+	m_ButtonColor = QColor(226,233,239, m_CubeOpacity * 255);
+	m_CubeWidgetSize = m_CubeWidgetScale * CUBE_WIDGET_BASE_SIZE;
+
 	Vector3f x(1, 0, 0);
 	Vector3f y(0, 1, 0);
 	Vector3f z(0, 0, 1);
@@ -674,6 +713,13 @@ void NaviCubeImplementation::initNaviCube(QtGLWidget* gl) {
 	r45x << 1, 0, 0,
 			0, cs, -sn,
 			0, sn, cs;
+
+#if defined(HAVE_QT5_OPENGL)
+	if (m_glTextures.size() != 0) {
+		for (vector<QOpenGLTexture *>::iterator t = m_glTextures.begin(); t != m_glTextures.end(); t++)
+			delete *t;
+	}
+#endif
 
 	m_Textures[TEX_CORNER_FACE] = createCubeFaceTex(gl, 0, 0.5f, NULL);
 	m_Textures[TEX_BACK_FACE] = createCubeFaceTex(gl, 0.02f, 0.3f, NULL);
@@ -711,7 +757,10 @@ void NaviCubeImplementation::initNaviCube(QtGLWidget* gl) {
 	m_Textures[TEX_VIEW_MENU_ICON] = createMenuTex(gl, false);
 	m_Textures[TEX_VIEW_MENU_FACE] = createMenuTex(gl, true);
 
-			// front,back,pick,pickid
+	// Clear all faces if any, then regenerate with new params.
+	clearFaces();
+
+                        // front,back,pick,pickid
 	addFace(x, z, TEX_TOP, TEX_BACK_FACE, TEX_FRONT_FACE, TEX_TOP,true);
 	x = r90x * x;
 	z = r90x * z;
@@ -765,18 +814,28 @@ void NaviCubeImplementation::initNaviCube(QtGLWidget* gl) {
 	z = r90z * z;
 	addFace(x, z, TEX_CORNER_FACE, TEX_CORNER_FACE, TEX_CORNER_FACE, TEX_TOP_REAR_RIGHT);
 
-	m_Buttons.push_back(TEX_ARROW_NORTH);
-	m_Buttons.push_back(TEX_ARROW_SOUTH);
-	m_Buttons.push_back(TEX_ARROW_EAST);
-	m_Buttons.push_back(TEX_ARROW_WEST);
-	m_Buttons.push_back(TEX_ARROW_LEFT);
-	m_Buttons.push_back(TEX_ARROW_RIGHT);
+	if (m_Buttons.size() == 0) {
+		m_Buttons.push_back(TEX_ARROW_NORTH);
+		m_Buttons.push_back(TEX_ARROW_SOUTH);
+		m_Buttons.push_back(TEX_ARROW_EAST);
+		m_Buttons.push_back(TEX_ARROW_WEST);
+		m_Buttons.push_back(TEX_ARROW_LEFT);
+		m_Buttons.push_back(TEX_ARROW_RIGHT);
+	}
 
-	m_PickingFramebuffer = new QtGLFramebufferObject(2*m_CubeWidgetSize,2* m_CubeWidgetSize, QtGLFramebufferObject::CombinedDepthStencil);
+	if (m_PickingFramebuffer) {
+		m_PickingFramebuffer->release();
+		delete m_PickingFramebuffer;
+	}
+	m_PickingFramebuffer = new QtGLFramebufferObject(2 * m_CubeWidgetScale * m_CubeWidgetSize,
+													 2 * m_CubeWidgetScale * m_CubeWidgetSize,
+													 QtGLFramebufferObject::CombinedDepthStencil);
 }
 
 void NaviCubeImplementation::drawNaviCube() {
-	glViewport(m_CubeWidgetPosX-m_CubeWidgetSize/2, m_CubeWidgetPosY-m_CubeWidgetSize/2, m_CubeWidgetSize, m_CubeWidgetSize);
+	glViewport(m_CubeWidgetPosX - (m_CubeWidgetScale * m_CubeWidgetSize) / 2,
+			   m_CubeWidgetPosY - (m_CubeWidgetScale * m_CubeWidgetSize) / 2,
+			   m_CubeWidgetScale * m_CubeWidgetSize, m_CubeWidgetScale * m_CubeWidgetSize);
 	drawNaviCube(false);
 }
 
@@ -804,20 +863,20 @@ void NaviCubeImplementation::handleResize() {
 		else { // initial position
 			switch (m_Corner) {
 			case NaviCube::TopLeftCorner:
-				m_CubeWidgetPosX = m_CubeWidgetSize*1.1 / 2;
-				m_CubeWidgetPosY = view[1] - m_CubeWidgetSize*1.1 / 2;
+				m_CubeWidgetPosX = (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
+				m_CubeWidgetPosY = view[1] - (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
 				break;
 			case NaviCube::TopRightCorner:
-				m_CubeWidgetPosX = view[0] - m_CubeWidgetSize*1.1 / 2;
-				m_CubeWidgetPosY = view[1] - m_CubeWidgetSize*1.1 / 2;
+				m_CubeWidgetPosX = view[0] - (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
+				m_CubeWidgetPosY = view[1] - (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
 				break;
 			case NaviCube::BottomLeftCorner:
-				m_CubeWidgetPosX = m_CubeWidgetSize*1.1 / 2;
-				m_CubeWidgetPosY = m_CubeWidgetSize*1.1 / 2;
+				m_CubeWidgetPosX = (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
+				m_CubeWidgetPosY = (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
 				break;
 			case NaviCube::BottomRightCorner:
-				m_CubeWidgetPosX = view[0] - m_CubeWidgetSize*1.1 / 2;
-				m_CubeWidgetPosY = m_CubeWidgetSize*1.1 / 2;
+				m_CubeWidgetPosX = view[0] - (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
+				m_CubeWidgetPosY = (m_CubeWidgetScale * m_CubeWidgetSize * 1.1) / 2;
 				break;
 			}
 		}
@@ -880,7 +939,7 @@ void NaviCubeImplementation::drawNaviCube(bool pickMode) {
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
-	glAlphaFunc( GL_GREATER, 0.25);
+	glAlphaFunc(GL_GREATER, 0.1);
 	glEnable( GL_ALPHA_TEST);
 
 	glMatrixMode(GL_PROJECTION);
@@ -1078,7 +1137,8 @@ int NaviCubeImplementation::pickFace(short x, short y) {
 	if (m_PickingFramebuffer) {
 		m_PickingFramebuffer->bind();
 
-		glViewport(0, 0, 2*m_CubeWidgetSize,2* m_CubeWidgetSize);
+		glViewport(0, 0, 2 * m_CubeWidgetScale * m_CubeWidgetSize,
+				   2 * m_CubeWidgetScale * m_CubeWidgetSize);
 		glLoadIdentity();
 
 		glClearColor(0, 0, 0, 1);
@@ -1088,7 +1148,9 @@ int NaviCubeImplementation::pickFace(short x, short y) {
 
 		glFinish();
 
-		glReadPixels(2*(x - (m_CubeWidgetPosX-m_CubeWidgetSize/2)), 2*(y - (m_CubeWidgetPosY-m_CubeWidgetSize/2)), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixels);
+		glReadPixels(2 *(x - (m_CubeWidgetPosX - (m_CubeWidgetScale * m_CubeWidgetSize) / 2)),
+					 2 *(y - (m_CubeWidgetPosY - (m_CubeWidgetScale * m_CubeWidgetSize) / 2)),
+					 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixels);
 		m_PickingFramebuffer->release();
 
 		//QImage image = m_PickingFramebuffer->toImage();
@@ -1100,7 +1162,7 @@ int NaviCubeImplementation::pickFace(short x, short y) {
 bool NaviCubeImplementation::mousePressed(short x, short y) {
 	m_MouseDown = true;
 	m_Dragging = false;
-	m_MightDrag = inDragZone(x, y);
+	m_MightDrag = m_DragLocked ? false : inDragZone(x, y);
 	int pick = pickFace(x, y);
 	// cerr << enum2str(pick) << endl;
 	setHilite(pick);
@@ -1243,7 +1305,7 @@ void NaviCubeImplementation::setHilite(int hilite) {
 bool NaviCubeImplementation::inDragZone(short x, short y) {
 	int dx = x - m_CubeWidgetPosX;
 	int dy = y - m_CubeWidgetPosY;
-	int limit = m_CubeWidgetSize/4;
+	int limit = (m_CubeWidgetScale * m_CubeWidgetSize) / 4;
 	return abs(dx)<limit && abs(dy)<limit;
 }
 

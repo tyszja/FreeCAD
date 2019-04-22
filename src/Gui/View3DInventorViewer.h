@@ -349,6 +349,9 @@ public:
     void setEnabledNaviCube(bool b);
     bool isEnabledNaviCube(void) const;
     void setNaviCubeCorner(int);
+    void setNaviCubeLocked(bool);
+    void setNaviCubeOpacity(float);
+    void setNaviCubeScale(float);
     NaviCube* getNavigationCube() const;
     void setEnabledVBO(bool b);
     bool isEnabledVBO() const;

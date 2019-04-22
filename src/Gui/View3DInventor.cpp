@@ -169,6 +169,9 @@ View3DInventor::View3DInventor(Gui::Document* pcDocument, QWidget* parent,
     OnChange(*hGrp,"UseBackgroundColorMid");
     OnChange(*hGrp,"ShowFPS");
     OnChange(*hGrp,"ShowNaviCube");
+    OnChange(*hGrp,"LockNaviCube");
+    OnChange(*hGrp,"NaviCubeTransparency");
+    OnChange(*hGrp,"NaviCubeScale");
     OnChange(*hGrp,"CornerNaviCube");
     OnChange(*hGrp,"UseVBO");
     OnChange(*hGrp,"Orthographic");
@@ -369,6 +372,15 @@ void View3DInventor::OnChange(ParameterGrp::SubjectType &rCaller,ParameterGrp::M
     }
     else if (strcmp(Reason,"ShowNaviCube") == 0) {
         _viewer->setEnabledNaviCube(rGrp.GetBool("ShowNaviCube",true));
+    }
+    else if (strcmp(Reason,"LockNaviCube") == 0) {
+        _viewer->setNaviCubeLocked(rGrp.GetBool("LockNaviCube",true));
+    }
+    else if (strcmp(Reason,"NaviCubeOpacity") == 0) {
+        _viewer->setNaviCubeOpacity(rGrp.GetFloat("NaviCubeOpacity",true));
+    }
+    else if (strcmp(Reason,"NaviCubeScale") == 0) {
+        _viewer->setNaviCubeScale(rGrp.GetFloat("NaviCubeScale",true));
     }
     else if (strcmp(Reason,"CornerNaviCube") == 0) {
         _viewer->setNaviCubeCorner(rGrp.GetInt("CornerNaviCube",1));

@@ -100,6 +100,9 @@ void DlgSettings3DViewImp::saveSettings()
     CheckBox_ShowFPS->onSave();
     CheckBox_useVBO->onSave();
     CheckBox_NaviCube->onSave();
+    CheckBox_LockNaviCube->onSave();
+    SpinBox_Opacity->onSave();
+    SpinBox_Scale->onSave();
     CheckBox_UseAutoRotation->onSave();
     FloatSpinBox_EyeDistance->onSave();
     checkBoxBacklight->onSave();
@@ -130,6 +133,9 @@ void DlgSettings3DViewImp::loadSettings()
     CheckBox_ShowFPS->onRestore();
     CheckBox_useVBO->onRestore();
     CheckBox_NaviCube->onRestore();
+    CheckBox_LockNaviCube->onRestore();
+    SpinBox_Opacity->onRestore();
+    SpinBox_Scale->onRestore();
     CheckBox_UseAutoRotation->onRestore();
     FloatSpinBox_EyeDistance->onRestore();
     checkBoxBacklight->onRestore();

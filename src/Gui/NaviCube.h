@@ -47,6 +47,9 @@ public:
 	void createContextMenu(const std::vector<std::string>& cmd);
 	bool processSoEvent(const SoEvent* ev);
 	void setCorner(Corner);
+	void setLocked(bool on);
+	void setOpacity(float d);
+	void setScale(float d);
 	static void setNaviCubeCommands(const std::vector<std::string>& cmd);
 	static void setNaviCubeLabels(const std::vector<std::string>& labels);
 private:
