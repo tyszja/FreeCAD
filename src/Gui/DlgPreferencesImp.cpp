@@ -63,8 +63,6 @@ DlgPreferencesImp::DlgPreferencesImp(QWidget* parent, Qt::WindowFlags fl)
       invalidParameter(false), canEmbedScrollArea(true)
 {
     ui->setupUi(this);
-    ui->listBox->setFixedWidth(130);
-    ui->listBox->setGridSize(QSize(108, 120));
 
     connect(ui->buttonBox,  SIGNAL (helpRequested()),
             getMainWindow(), SLOT (whatsThis()));
@@ -125,6 +123,8 @@ void DlgPreferencesImp::setupPages()
             }
         }
     }
+
+    ui->listBox->setFixedWidth(ui->listBox->sizeHintForColumn(0) + 2 * ui->listBox->spacing());
 
     // show the first group
     ui->listBox->setCurrentRow(0);
